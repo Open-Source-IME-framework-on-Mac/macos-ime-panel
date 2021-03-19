@@ -51,8 +51,7 @@
     m_auxiliaryText = auxiliaryText;
 }
 
--(void)update:(MacOSIMEPanelPayload *)payload
-{
+-(void)update {
     [self setNeedsDisplay:YES];
 }
 
@@ -363,8 +362,8 @@
         [(SimpleIMEPanel *)m_view setTheme:_theme];
     }
 
-    // Set auxiliary data, preedit data and candidate
-    [(SimpleIMEPanel *)m_view update:m_payload];
+    // Update to repaint
+    [(SimpleIMEPanel *)m_view update];
 }
 
 - (void)render {

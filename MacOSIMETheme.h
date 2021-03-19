@@ -25,6 +25,8 @@
 @property (nonatomic, readonly) NSPoint panelTextMarginRB;
 @property (nonatomic, readonly) NSPoint panelContentMarginLT;
 @property (nonatomic, readonly) NSPoint panelContentMarginRB;
+@property (nonatomic, readonly) NSColor *panelHighlightCandidateColor;
+@property (nonatomic, readonly) NSColor *panelHighlightBackgroundColor;
 
 @property (nonatomic, readonly) NSImage *panelBackgroundImage;
 @property (nonatomic, readonly) NSPoint panelBackgroundMarginLT;

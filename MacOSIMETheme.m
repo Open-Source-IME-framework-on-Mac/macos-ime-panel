@@ -24,6 +24,8 @@
     _panelTextMarginRB = NSMakePoint(5, 5);
     _panelContentMarginLT = NSMakePoint(2, 2);
     _panelContentMarginRB = NSMakePoint(2, 2);
+    _panelHighlightCandidateColor = RGB(0xff, 0xff, 0xff);
+    _panelHighlightBackgroundColor = RGB(0xa5, 0xa5, 0xa5);
 
     _panelBackgroundImage = [[NSImage alloc] initByReferencingURL:[[NSBundle mainBundle] URLForResource:@"panel" withExtension:@"png"]];
     _panelBackgroundMarginLT = NSMakePoint(2, 2);

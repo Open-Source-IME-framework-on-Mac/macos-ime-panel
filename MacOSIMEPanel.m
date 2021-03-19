@@ -110,12 +110,25 @@
         NSRect candidateRect;
         NSString *candidate = [[m_payload candidates] objectAtIndex:i];
         // NSAttributedString *candidateString = [[NSAttributedString alloc] initWithString:[NSString stringWithFormat:@"%lu.%@", i + 1, candidate] attributes:_attr];
-        NSAttributedString *candidateString = [[NSAttributedString alloc] initWithString:[NSString stringWithFormat:@"%@", candidate] attributes:_attr];
+        NSMutableAttributedString *candidateString = [[NSMutableAttributedString alloc] initWithString:[NSString stringWithFormat:@"%@", candidate] attributes:_attr];
         x = fullWidth + [_theme panelTextMarginLT].x;
-        y = rect.origin.y + [_theme panelTextMarginRB].y;
+        y = rect.origin.y + [_theme panelContentMarginRB].y + [_theme panelTextMarginRB].y;
         candidateRect.origin.x = x;
         candidateRect.origin.y = y;
         candidateRect.size = [candidateString size];
+        if (i == 0) {
+            [candidateString addAttribute:NSForegroundColorAttributeName
+                    value:[_theme panelHighlightCandidateColor]
+                    range:NSMakeRange(0, [candidate length])];
+            if ([_theme panelHighlightImage]) {
+                NSRect candidateImageRect = candidateRect;
+                candidateImageRect.origin.x = fullWidth;
+                candidateImageRect.origin.y = y - [_theme panelTextMarginRB].y;
+                candidateImageRect.size.width += ([_theme panelTextMarginLT].x + [_theme panelTextMarginRB].x);
+                candidateImageRect.size.height += ([_theme panelTextMarginLT].y + [_theme panelTextMarginRB].y);
+                [[_theme panelHighlightImage] drawInRect:candidateImageRect];
+            }
+        }
         [candidateString drawInRect:candidateRect];
         fullWidth = x + candidateRect.size.width + [_theme panelTextMarginRB].x;
     }
@@ -180,12 +193,10 @@
     ];
     [payload setAuxiliaryText:m_auxText];
     [payload setCandidates:m_candidates];
-    NSFont *_font = [NSFont systemFontOfSize:16];
-    NSColor *_hlColor = [NSColor blueColor];
 
     NSMutableDictionary *_attr = [[NSMutableDictionary alloc] init];
-    // [_attr setObject:_fgColor forKey:NSForegroundColorAttributeName];
-    [_attr setObject:_font forKey:NSFontAttributeName];
+    [_attr setObject:[_theme panelNormalColor] forKey:NSForegroundColorAttributeName];
+    [_attr setObject:[_theme panelFont] forKey:NSFontAttributeName];
     m_string = [[NSMutableAttributedString alloc] init];
     for (NSUInteger i = 0; i < [m_candidates count]; i++) {
         NSString *str = [NSString stringWithFormat:@"%lu.%@ ", i+1, [m_candidates objectAtIndex:i]];
@@ -194,7 +205,7 @@
 
         if (i==0)
             [m_string addAttribute:NSForegroundColorAttributeName
-                    value:_hlColor
+                    value:[_theme panelHighlightCandidateColor]
                     range:NSMakeRange(0, [str length])];
     }
     _size = [m_string size];

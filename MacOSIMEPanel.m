@@ -153,10 +153,6 @@
     NSView *m_view;
 
     MacOSIMEPanelPayload *m_payload;
-    // TODO: replace them
-    NSArray *m_candidates;
-    NSString *m_auxText;
-    NSString *m_preeditText;
 
     // Temp
     NSMutableAttributedString *m_string;
@@ -181,9 +177,6 @@
     m_hasNextPage = NO;
     m_hasPrevPage = NO;
 
-    m_auxText = nil;
-    m_preeditText = nil;
-
     return self;
 }
 
@@ -196,20 +189,14 @@
     // TODO: do sth with DPI
 
     // TODO: Prepare auxiliary data, preedit data and candidate
-    // auxiliary text
+    m_payload = payload;
     SimpleIMEPanel *view = (SimpleIMEPanel *)m_view;
-    m_auxText = @"TestTestTestPinyin|";
-    // candidate
-    m_candidates = @[
-        @"Test", @"Testg", @"Testq", @"Testp", @"Test4"
-    ];
-    [payload setAuxiliaryText:m_auxText];
-    [payload setCandidates:m_candidates];
 
+    // auxiliary text
     NSMutableDictionary *_attr = [[NSMutableDictionary alloc] init];
     [_attr setObject:[_theme panelNormalColor] forKey:NSForegroundColorAttributeName];
     [_attr setObject:[_theme panelFont] forKey:NSFontAttributeName];
-    NSAttributedString *auxTextString = [[NSAttributedString alloc] initWithString:m_auxText attributes:_attr];
+    NSAttributedString *auxTextString = [[NSAttributedString alloc] initWithString:[payload auxiliaryText] attributes:_attr];
     [view setAuxiliaryText:auxTextString];
     NSSize auxiliaryTextRect = [auxTextString size];
     auxiliaryTextRect.height += ([_theme panelTextMarginLT].y + [_theme panelTextMarginRB].y);
@@ -218,13 +205,13 @@
     NSSize candidateTextRect;
     NSUInteger height = 0;
     CGFloat fullWidth = 0;
-    for (NSUInteger i = 0; i < [m_candidates count]; i++) {
+    for (NSUInteger i = 0; i < [[payload candidates] count]; i++) {
         NSMutableDictionary *attr = [[NSMutableDictionary alloc] init];
         [attr setObject:[_theme panelNormalColor] forKey:NSForegroundColorAttributeName];
         [attr setObject:[_theme panelFont] forKey:NSFontAttributeName];
         CGFloat x, y;
         NSRect candidateRect;
-        NSString *candidateString = [NSString stringWithFormat:@"%lu.%@", (i + 1) % 10, [m_candidates objectAtIndex:i]];
+        NSString *candidateString = [NSString stringWithFormat:@"%lu.%@", (i + 1) % 10, [[payload candidates] objectAtIndex:i]];
         if (i == HIGHLIGHT) {
             [attr setObject:[_theme panelHighlightCandidateColor] forKey:NSForegroundColorAttributeName];
         }
@@ -245,8 +232,7 @@
     _size.height = candidateTextRect.height + auxiliaryTextRect.height + [_theme panelContentMarginRB].y + [_theme panelContentMarginLT].y;
     _size.width = (candidateTextRect.width > auxiliaryTextRect.width ? candidateTextRect.width : auxiliaryTextRect.width) + [_theme panelContentMarginRB].x + [_theme panelContentMarginLT].x + ([_theme panelPrevPageMarginLT].x + [[_theme panelPrevPageImage] size].width + [_theme panelPrevPageMarginRB].x + [_theme panelNextPageMarginLT].x + [[_theme panelNextPageImage] size].width + [_theme panelNextPageMarginRB].x);
 
-    m_payload = payload;
-    if ([m_candidates count] > 0) {
+    if ([[payload candidates] count] > 0) {
         _visible = YES;
     }
 
@@ -265,7 +251,7 @@
     }
 
     NSRect winRect;
-    NSRect cursorRect = NSMakeRect(100, 100, 800, 600);
+    NSRect cursorRect = [m_payload cursor];
     winRect.origin.x = cursorRect.origin.x + 2;
     winRect.origin.y = cursorRect.origin.y - winRect.size.height - 20;
     winRect.size = _size;

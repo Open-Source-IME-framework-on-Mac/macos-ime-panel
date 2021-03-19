@@ -7,19 +7,20 @@
 
 #import "MacOSIMEPanel.h"
 
+#define HIGHLIGHT 1
+
 @implementation MacOSIMEPanelPayload
 - (id)init { return self; }
 @end
 
 @interface SimpleIMEPanel : NSView {
-    NSAttributedString  *_string;
-    MacOSIMEPanelPayload *m_payload;
-
     BOOL m_hasNextPage;
     BOOL m_hasPrevPage;
-}
 
--(void)setAttributedString:(NSAttributedString *)str;
+    NSAttributedString *m_preeditText;
+    NSAttributedString *m_auxiliaryText;
+    NSMutableArray *m_candidates;
+}
 
 @property (nonatomic) MacOSIMETheme *theme;
 
@@ -27,22 +28,38 @@
 
 @implementation SimpleIMEPanel
 
--(void)setAttributedString:(NSAttributedString *)str
-{
-    _string = str;
-    [self setNeedsDisplay:YES];
+- (void)reset {
+    if (m_candidates) {
+        [m_candidates removeAllObjects];
+    }
+    m_preeditText = nil;
+    m_auxiliaryText = nil;
+}
+
+- (void)addCandidateText:(NSAttributedString *)candidateText {
+    if (!m_candidates) {
+        m_candidates = [[NSMutableArray alloc] init];
+    }
+    [m_candidates addObject:candidateText];
+}
+
+- (void)setPreeditText:(NSAttributedString *)preeditText {
+    m_preeditText = preeditText;
+}
+
+- (void)setAuxiliaryText:(NSAttributedString *)auxiliaryText {
+    m_auxiliaryText = auxiliaryText;
 }
 
 -(void)update:(MacOSIMEPanelPayload *)payload
 {
-    m_payload = payload;
     [self setNeedsDisplay:YES];
 }
 
 - (void)drawRect:(NSRect)rect
 {
-    if (!m_payload)
-        return;
+    // if (!m_payload)
+    //     return;
 
     [[NSColor clearColor] set];
     NSRectFill([self bounds]);
@@ -96,7 +113,7 @@
     [_attr setObject:[_theme panelFont] forKey:NSFontAttributeName];
 
     // TODO: Draw layouts (aux, preedit)
-    NSAttributedString *auxTextString = [[NSAttributedString alloc] initWithString:[m_payload auxiliaryText] attributes:_attr];
+    NSAttributedString *auxTextString = m_auxiliaryText;
     NSRect auxTextRect;
     auxTextRect.origin.x = rect.origin.x + [_theme panelContentMarginLT].x + [_theme panelTextMarginLT].x;
     auxTextRect.origin.y = rect.origin.y + rect.size.height - [_theme panelContentMarginLT].y - [_theme panelTextMarginLT].y - 20;
@@ -105,21 +122,16 @@
 
     // TODO: Draw highlight
     CGFloat fullWidth = rect.origin.x + [_theme panelContentMarginLT].x;
-    for (NSUInteger i = 0; i < [[m_payload candidates] count]; i++) {
+    for (NSUInteger i = 0; i < [m_candidates count]; i++) {
         CGFloat x, y;
         NSRect candidateRect;
-        NSString *candidate = [[m_payload candidates] objectAtIndex:i];
-        // NSAttributedString *candidateString = [[NSAttributedString alloc] initWithString:[NSString stringWithFormat:@"%lu.%@", i + 1, candidate] attributes:_attr];
-        NSMutableAttributedString *candidateString = [[NSMutableAttributedString alloc] initWithString:[NSString stringWithFormat:@"%@", candidate] attributes:_attr];
+        NSMutableAttributedString *candidateString = [m_candidates objectAtIndex:i];
         x = fullWidth + [_theme panelTextMarginLT].x;
         y = rect.origin.y + [_theme panelContentMarginRB].y + [_theme panelTextMarginRB].y;
         candidateRect.origin.x = x;
         candidateRect.origin.y = y;
         candidateRect.size = [candidateString size];
-        if (i == 0) {
-            [candidateString addAttribute:NSForegroundColorAttributeName
-                    value:[_theme panelHighlightCandidateColor]
-                    range:NSMakeRange(0, [candidate length])];
+        if (i == HIGHLIGHT) {
             if ([_theme panelHighlightImage]) {
                 NSRect candidateImageRect = candidateRect;
                 candidateImageRect.origin.x = fullWidth;
@@ -186,6 +198,7 @@
 
     // TODO: Prepare auxiliary data, preedit data and candidate
     // auxiliary text
+    SimpleIMEPanel *view = (SimpleIMEPanel *)m_view;
     m_auxText = @"TestTestTestPinyin|";
     // candidate
     m_candidates = @[
@@ -197,22 +210,42 @@
     NSMutableDictionary *_attr = [[NSMutableDictionary alloc] init];
     [_attr setObject:[_theme panelNormalColor] forKey:NSForegroundColorAttributeName];
     [_attr setObject:[_theme panelFont] forKey:NSFontAttributeName];
-    m_string = [[NSMutableAttributedString alloc] init];
-    for (NSUInteger i = 0; i < [m_candidates count]; i++) {
-        NSString *str = [NSString stringWithFormat:@"%lu.%@ ", i+1, [m_candidates objectAtIndex:i]];
-        NSAttributedString *astr = [[NSAttributedString alloc] initWithString:str attributes:_attr];
-        [m_string appendAttributedString:astr];
+    NSAttributedString *auxTextString = [[NSAttributedString alloc] initWithString:m_auxText attributes:_attr];
+    [view setAuxiliaryText:auxTextString];
+    NSSize auxiliaryTextRect = [auxTextString size];
+    auxiliaryTextRect.height += ([_theme panelTextMarginLT].y + [_theme panelTextMarginRB].y);
+    auxiliaryTextRect.width += ([_theme panelTextMarginLT].x + [_theme panelTextMarginRB].x);
 
-        if (i==0)
-            [m_string addAttribute:NSForegroundColorAttributeName
-                    value:[_theme panelHighlightCandidateColor]
-                    range:NSMakeRange(0, [str length])];
+    NSSize candidateTextRect;
+    NSUInteger height = 0;
+    CGFloat fullWidth = 0;
+    for (NSUInteger i = 0; i < [m_candidates count]; i++) {
+        NSMutableDictionary *attr = [[NSMutableDictionary alloc] init];
+        [attr setObject:[_theme panelNormalColor] forKey:NSForegroundColorAttributeName];
+        [attr setObject:[_theme panelFont] forKey:NSFontAttributeName];
+        CGFloat x, y;
+        NSRect candidateRect;
+        NSString *candidateString = [NSString stringWithFormat:@"%lu.%@", (i + 1) % 10, [m_candidates objectAtIndex:i]];
+        if (i == HIGHLIGHT) {
+            [attr setObject:[_theme panelHighlightCandidateColor] forKey:NSForegroundColorAttributeName];
+        }
+
+        NSAttributedString *candidateAttrString = [[NSAttributedString alloc] initWithString:candidateString attributes:attr];
+        x = fullWidth + [_theme panelTextMarginLT].x;
+        y = ([_theme panelContentMarginRB].y + [_theme panelTextMarginRB].y);
+        candidateRect.origin.x = x;
+        candidateRect.origin.y = y;
+        candidateRect.size = [candidateAttrString size];
+        [view addCandidateText:candidateAttrString];
+        fullWidth = x + candidateRect.size.width + [_theme panelTextMarginRB].x;
+        height = (height > [candidateAttrString size].height ? height : [candidateAttrString size].height);
     }
-    _size = [m_string size];
-    _size.height += (20 + [_theme panelContentMarginRB].y + [_theme panelContentMarginLT].y
-                     + [_theme panelTextMarginRB].y + [_theme panelTextMarginLT].y);
-    _size.width += ([_theme panelContentMarginRB].x + [_theme panelContentMarginLT].x
-                    + [_theme panelTextMarginRB].x + [_theme panelTextMarginLT].x);
+    candidateTextRect.width = fullWidth;
+    candidateTextRect.height = (height + [_theme panelTextMarginRB].y + [_theme panelTextMarginLT].y);
+
+    _size.height = candidateTextRect.height + auxiliaryTextRect.height + [_theme panelContentMarginRB].y + [_theme panelContentMarginLT].y;
+    _size.width = (candidateTextRect.width > auxiliaryTextRect.width ? candidateTextRect.width : auxiliaryTextRect.width) + [_theme panelContentMarginRB].x + [_theme panelContentMarginLT].x + ([_theme panelPrevPageMarginLT].x + [[_theme panelPrevPageImage] size].width + [_theme panelPrevPageMarginRB].x + [_theme panelNextPageMarginLT].x + [[_theme panelNextPageImage] size].width + [_theme panelNextPageMarginRB].x);
+
     m_payload = payload;
     if ([m_candidates count] > 0) {
         _visible = YES;

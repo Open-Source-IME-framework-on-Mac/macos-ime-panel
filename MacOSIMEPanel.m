@@ -28,6 +28,14 @@
 
 @implementation SimpleIMEPanel
 
+- (void)mouseDown:(NSEvent *)event {
+    // TODO: Click to change highlight, click again to choose the candidate
+}
+
+- (void)scrollWheel:(NSEvent *)event {
+    // TODO: Send flip page message
+}
+
 - (void)reset {
     if (m_candidates) {
         [m_candidates removeAllObjects];

@@ -204,6 +204,7 @@
     // TODO: Prepare auxiliary data, preedit data and candidate
     m_payload = payload;
     SimpleIMEPanel *view = (SimpleIMEPanel *)m_view;
+    [view reset];
 
     // auxiliary text
     NSMutableDictionary *_attr = [[NSMutableDictionary alloc] init];

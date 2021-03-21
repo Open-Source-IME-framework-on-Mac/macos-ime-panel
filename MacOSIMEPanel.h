@@ -17,6 +17,7 @@
 @property (nonatomic) NSString *auxiliaryText;
 @property (nonatomic) NSArray *candidates;
 @property (nonatomic) NSRect cursor;
+@property (nonatomic) NSUInteger highlightIndex;
 
 - (id)init;
 

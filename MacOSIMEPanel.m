@@ -7,8 +7,6 @@
 
 #import "MacOSIMEPanel.h"
 
-#define HIGHLIGHT 1
-
 @implementation MacOSIMEPanelPayload
 - (id)init { return self; }
 @end
@@ -20,6 +18,8 @@
     NSAttributedString *m_preeditText;
     NSAttributedString *m_auxiliaryText;
     NSMutableArray *m_candidates;
+
+    NSInteger m_highlighIndex;
 }
 
 @property (nonatomic) MacOSIMETheme *theme;
@@ -34,6 +34,7 @@
     }
     m_preeditText = nil;
     m_auxiliaryText = nil;
+    m_highlighIndex = -1;
 }
 
 - (void)addCandidateText:(NSAttributedString *)candidateText {
@@ -49,6 +50,10 @@
 
 - (void)setAuxiliaryText:(NSAttributedString *)auxiliaryText {
     m_auxiliaryText = auxiliaryText;
+}
+
+- (void)setHighlightIndex:(NSUInteger)index {
+    m_highlighIndex = index;
 }
 
 -(void)update {
@@ -119,7 +124,7 @@
     auxTextRect.size = [auxTextString size];
     [auxTextString drawInRect:auxTextRect];
 
-    // TODO: Draw highlight
+    // Draw candidates
     CGFloat fullWidth = rect.origin.x + [_theme panelContentMarginLT].x;
     for (NSUInteger i = 0; i < [m_candidates count]; i++) {
         CGFloat x, y;
@@ -130,7 +135,7 @@
         candidateRect.origin.x = x;
         candidateRect.origin.y = y;
         candidateRect.size = [candidateString size];
-        if (i == HIGHLIGHT) {
+        if (i == m_highlighIndex) {
             if ([_theme panelHighlightImage]) {
                 NSRect candidateImageRect = candidateRect;
                 candidateImageRect.origin.x = fullWidth;
@@ -212,7 +217,8 @@
         CGFloat x, y;
         NSRect candidateRect;
         NSString *candidateString = [NSString stringWithFormat:@"%lu.%@", (i + 1) % 10, [[payload candidates] objectAtIndex:i]];
-        if (i == HIGHLIGHT) {
+        if (i == [payload highlightIndex]) {
+            [view setHighlightIndex:i];
             [attr setObject:[_theme panelHighlightCandidateColor] forKey:NSForegroundColorAttributeName];
         }
 
